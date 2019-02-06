@@ -1,0 +1,3 @@
+#!/bin/bash
+notBackedUpCount=17
+mail -s "Zip of Team Drive Backups ERROR" dtaylor@21pstem.org <<<"${notBackedUpCount} Team Drives were not backed up this morning."

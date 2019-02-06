@@ -1,0 +1,46 @@
+#!/bin/bash
+# checkDates.sh
+#
+# checks all arguments passed in
+# indicates if it is a directory or a file, and how many days ago it was last modified
+
+function daysDiff() {
+  echo "$1 is the current date"
+  echo "$2 is the file or directory name"
+  modDate=$(date -r $2 "+%Y%m%d")
+  echo "modDate: $modDate"
+  diff=$(( $1 - $2 ))
+  echo diff
+}
+
+curDate=`date +%Y%m%d`
+echo "curDate: $curDate"
+
+# if number of last argument is not zero (passed some params)
+# then set $fileDirs to the arguments (excluding checkDates.sh)
+[ $# -ne 0 ] && fileDirs="$@"
+
+# loop through each argument, see if it is a file or directory
+# then list the number of days since it was last modified (compared to today)
+for fileDir in $fileDirs; do
+  if [ -d $fileDir ]
+  then
+    modDate=$(date -r $fileDir "+%Y%m%d")
+    # echo "modDate: $modDate"
+    diff=$(( $curDate - $modDate ))
+    echo "$fileDir is a directory that was modified $diff days ago"
+    # result=$(daysDiff($curDate, $fileDir))
+    # echo "$fileDir is a directory that was modified $result days ago"
+  elif [ -f $fileDir ]
+  then
+    modDate=$(date -r $fileDir "+%Y%m%d")
+    # echo "modDate: $modDate"
+    diff=$(( $curDate - $modDate ))
+    echo "$fileDir is a file that was modified $diff days ago"
+    # result=$(daysDiff($curDate, $fileDir))
+    # echo "$fileDir is a file that was modified $result days ago"
+  else
+    echo "$fileDir does not exist"
+  fi
+done
+

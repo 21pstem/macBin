@@ -1,0 +1,36 @@
+#!/bin/bash
+  
+curDate=`date +%Y%m%d`
+curDateFileFormat=`date +%Y-%m-%d`
+
+source_dir="/Volumes/GoogleDrive/Team Drives/TeamFoldersBackups"
+destDir="/Users/davidtaylor/Documents/synched_21/STESSA/Teambackups/"
+destFileMatch="$curDateFileFormat*TeamFoldersBackups.zip"
+destDirFileMatch="$destDir$destFileMatch"
+
+lastSeq=""
+# loop through the backed up team drive folders
+for fileDir in $destDirFileMatch; do
+  if [ -f "$fileDir" ]
+  then
+    fileName=$(basename $fileDir)
+    fileSeq="${fileName:10:1}"
+    if [[ $fileSeq > $lastSeq ]]
+    then
+      lastSeq=$fileSeq
+    fi
+  fi
+done
+
+letters="abcdefghijklmnopqrstuvwxyz"
+posit=${letters#*$lastSeq}
+nextPosit=$(( ${#letters} - ${#posit} ))
+nextSeq=${letters:$nextPosit:1}
+
+newFile="${curDateFileFormat}${nextSeq}TeamFoldersBackups.zip"
+echo "output to file: $newFile"
+
+cd "$destDir"
+zip -qr "$newFile" "$source_dir"
+echo "Done"
+

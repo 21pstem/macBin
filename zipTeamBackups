@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# get todays date in YYYYMMDD format
+curDate=`date +%Y%m%d`
+curDateFileFormat=`date +%Y-%m-%d`
+
+# source folder to backup
+# The folder that BackupTeamDrives backs up all team drives to
+# Note uses Google Stream Drive folders for local access to the backup folder
+sourceDir="/Volumes/GoogleDrive/Team Drives/TeamFoldersBackups"
+sourceDirMatch="${sourceDir}/*"
+
+# destination folder to hold all of the backups
+# ToDo - set up daily, weekly, monthly and yearly rotation
+destDir="/Users/davidtaylor/Documents/synched_21/STESSA/Teambackups/"
+destFileMatch="${curDateFileFormat}*TeamFoldersBackups.zip"
+destDirFileMatch="${destDir}${destFileMatch}"
+#echo "destDirFileMatch: $destDirFileMatch"
+#echo "{destDirFileMatch}: ${destDirFileMatch}"
+
+# check to see if there are any other backups for this date
+# uses a sequence letter in the name YYYYMMDD<sequence_letter>TeamFoldersBackups.zip
+# if so, then the last sequence letter is used, so the backup filename will use the next letter
+lastSeq=""
+# loop through the backed up team drive folders
+for fileDir in ${destDirFileMatch}; do
+  if [ -f "$fileDir" ]
+  then
+    fileName=$(basename $fileDir)
+    # get the sequence letter
+    fileSeq="${fileName:10:1}"
+    if [[ $fileSeq > $lastSeq ]]
+    then
+      # this sequence is larger than saved value, so update saved value with it
+      lastSeq=$fileSeq
+    fi
+  fi
+done
+
+# check the dates for all team drive backup folders
+# make sure they are all dated today, except for ECASE
+cd "${sourceDir}"
+backedUpCount=0
+notBackedUpCount=0
+for fileDir in *; do
+  # echo "for file: ${fileDir}"
+  if [ -d "${fileDir}" ]
+  then
+    # echo "found backup directory ${fileDir}"
+    modDate=$(stat -f "%Sm" -t "%Y%m%d" "${fileDir}")
+    # echo "curDate: ${curDate}, modDate: $modDate"
+    diff=$(( $curDate - $modDate ))
+    case "$fileDir" in
+    ECASE)
+      echo "skipping ECASE"
+      ;;
+    *)
+      echo "$fileDir has modified date: $modDate ($diff)"
+      ((backedUpCount++))
+      if [ $diff .gt '0' ]; then ((notBackedUpCount++)); fi
+      ;;
+    esac
+  fi
+done
+
+if [ ${notBackedUpCount} -gt '0' ]
+then
+  # some of the backup folders are not dated today.
+  # send an email with an error
+  echo "${notBackedUpCount} gt zero  "
+  mail -s "Zip of Team Drive Backups ERROR" dtaylor@21pstem.org <<<"${notBackedUpCount} of ${backedUpCount} Team Drives were not backed up this morning."
+  echo "Error email sent to dtaylor"
+else
+  #  all folders are dated today (except ECASE)
+ echo "${notBackedUpCount} eq zero  "
+
+  #  get the next filename sequence letter for the output filename
+  letters="abcdefghijklmnopqrstuvwxyz"
+  posit=${letters#*$lastSeq}
+  nextPosit=$(( ${#letters} - ${#posit} ))
+  nextSeq=${letters:$nextPosit:1}
+  newFile="${curDateFileFormat}${nextSeq}TeamFoldersBackups.zip"
+  echo "output to file: $newFile"
+
+  # create the zip file of the backups
+  cd "$source_dir"
+  pwd
+  zip -qr "${source_dir}${newFile}" .
+
+  # email the successful zip of the backups
+  mail -s "Zip of Team Drive Backups Success" dtaylor@21pstem.org <<<"Success! Team Drive Backups were zipped to file: ${newFile}. ${notBackedUpCount} of ${backedUpCount} Team Drives were missed."
+  echo "Sent success email to dtaylor"
+
+  echo "Done"
+fi
+
