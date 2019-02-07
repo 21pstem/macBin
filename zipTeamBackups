@@ -57,7 +57,7 @@ for fileDir in *; do
     *)
       echo "$fileDir has modified date: $modDate ($diff)"
       ((backedUpCount++))
-      if [ $diff .gt '0' ]; then ((notBackedUpCount++)); fi
+      if [ $diff -gt '0' ]; then ((notBackedUpCount++)); fi
       ;;
     esac
   fi
@@ -85,7 +85,7 @@ else
   # create the zip file of the backups
   cd "$source_dir"
   pwd
-  zip -qr "${source_dir}${newFile}" .
+  zip -qr "${destDir}${newFile}" .
 
   # email the successful zip of the backups
   mail -s "Zip of Team Drive Backups Success" dtaylor@21pstem.org <<<"Success! Team Drive Backups were zipped to file: ${newFile}. ${notBackedUpCount} of ${backedUpCount} Team Drives were missed."
